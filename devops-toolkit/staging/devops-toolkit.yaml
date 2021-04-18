@@ -7,7 +7,5 @@ spec:
   - image: vfarcic/devops-toolkit-series:2.9.10
     version: 1
   ingress:
-    cnames:
-    - devops-toolkit.104.196.160.228.nip.io
     generateDefaultCname: true
   pool: production
