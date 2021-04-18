@@ -1,4 +1,3 @@
-cat argo-cd/overlays/production/redis_patch.json   
 [
   {
     "op": "replace",
