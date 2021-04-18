@@ -1,0 +1,10 @@
+---
+
+apiVersion: theketch.io/v1beta1
+kind: Pool
+metadata:
+  name: production
+spec:
+  ingressController:
+    serviceEndpoint: 104.196.160.228
+    type: istio
