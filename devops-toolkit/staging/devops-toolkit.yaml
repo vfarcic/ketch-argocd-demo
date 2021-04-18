@@ -1,0 +1,12 @@
+apiVersion: theketch.io/v1beta1
+kind: App
+metadata:
+  name: devops-toolkit-staging
+spec:
+  deployments:
+  - image: vfarcic/devops-toolkit-series:2.9.10
+    version: 1
+  ingress:
+    cnames:
+    - acme.com
+  pool: production
