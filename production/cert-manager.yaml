@@ -8,7 +8,7 @@ metadata:
 spec:
   project: production
   source:
-    path: cert-manager/overlays/base
+    path: cert-manager/base
     repoURL: https://github.com/vfarcic/ketch-argocd-demo
     targetRevision: HEAD
   destination:
