@@ -1,0 +1,9 @@
+cat argo-cd/overlays/production/redis_patch.json   
+[
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/securityContext/runAsNonRoot",
+    "value": false
+  }
+]
+
