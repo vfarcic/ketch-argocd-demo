@@ -8,5 +8,6 @@ spec:
     version: 1
   ingress:
     cnames:
-    - acme.com
+    - devops-toolkit.104.196.160.228.nip.io
+    generateDefaultCname: true
   pool: production
