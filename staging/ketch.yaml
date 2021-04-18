@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ketch-production
+  name: ketch-staging
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: production
+  project: staging
   source:
-    path: ketch/overlays/production
+    path: ketch/overlays/staging
     repoURL: https://github.com/vfarcic/ketch-argocd-demo
     targetRevision: HEAD
   destination:
