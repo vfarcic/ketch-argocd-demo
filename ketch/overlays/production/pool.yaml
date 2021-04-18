@@ -5,6 +5,8 @@ kind: Pool
 metadata:
   name: production
 spec:
+  appQuotaLimit: -1
   ingressController:
     serviceEndpoint: 104.196.160.228
     type: istio
+  namespace: ketch-production
