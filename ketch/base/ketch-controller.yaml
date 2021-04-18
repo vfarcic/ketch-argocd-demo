@@ -1,0 +1,1169 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ketch-system
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: apps.theketch.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.pool
+    name: Pool
+    type: string
+  - JSONPath: .spec.description
+    name: Description
+    type: string
+  group: theketch.io
+  names:
+    kind: App
+    listKind: AppList
+    plural: apps
+    singular: app
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: App is the Schema for the apps API.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: AppSpec defines the desired state of App.
+          properties:
+            canary:
+              description: Canary contains a configuration which will be required for canary deployments.
+              properties:
+                active:
+                  description: Active shows if canary deployment is active for this application.
+                  type: boolean
+                currentStep:
+                  description: CurrentStep is the count for current step for a canary deployment.
+                  maximum: 100
+                  minimum: 0
+                  type: integer
+                nextScheduledTime:
+                  description: NextScheduledTime holds time of the next step.
+                  format: date-time
+                  type: string
+                started:
+                  description: Started holds time when canary started
+                  format: date-time
+                  type: string
+                stepTimeInterval:
+                  description: A Duration represents the elapsed time between two instants as an int64 nanosecond count. The representation limits the largest representable duration to approximately 290 years.
+                  format: int64
+                  type: integer
+                stepWeight:
+                  maximum: 100
+                  minimum: 0
+                  type: integer
+                steps:
+                  maximum: 100
+                  minimum: 0
+                  type: integer
+              type: object
+            deployments:
+              description: Deployments is a list of running deployments.
+              items:
+                properties:
+                  exposedPorts:
+                    items:
+                      description: ExposedPort represents a port exposed by a docker image. Native format is "port/PROTOCOL" string, we parse it and keep it as ExposedPort.
+                      properties:
+                        port:
+                          type: integer
+                        protocol:
+                          type: string
+                      required:
+                      - port
+                      - protocol
+                      type: object
+                    type: array
+                  image:
+                    type: string
+                  ketchYaml:
+                    description: KetchYamlData describes certain aspects of the application deployment being deployed.
+                    properties:
+                      healthcheck:
+                        description: Healthcheck describes readiness and liveness probes of the application deployment.
+                        properties:
+                          allowed_failures:
+                            description: AllowedFailures specifies a number of allowed failures before healthcheck considers the application is unhealthy. The defaults is 0.
+                            type: integer
+                          force_restart:
+                            description: ForceRestart determines whether a unit should be restarted after allowedFailures encounters consecutive healthcheck failures. Sets the liveness probe in the Pod.
+                            type: boolean
+                          headers:
+                            additionalProperties:
+                              type: string
+                            description: Headers defines optional additional header names that can be used for the request. Header names must be capitalized.
+                            type: object
+                          interval_seconds:
+                            description: IntervalSeconds is an interval in seconds between each active healthcheck call if use_in_router is set to true. The default is 10 seconds.
+                            type: integer
+                          match:
+                            description: Match is a regular expression to be matched against the request body. If not set, the body won’t be read and only the status code is checked. This regular expression uses Go syntax and runs with a matching \n (s flag).
+                            type: string
+                          method:
+                            description: Method defines the method used to make the http request. The default is GET.
+                            type: string
+                          path:
+                            description: Path defines which path to call in the application. This path is called for each unit. It is the only mandatory field. If not set, the health check is ignored.
+                            minLength: 1
+                            type: string
+                          scheme:
+                            description: Scheme defines which scheme to use. The defaults is http.
+                            type: string
+                          timeout_seconds:
+                            description: TimeoutSeconds is a timeout for each healthcheck call in seconds. The default is 60 seconds.
+                            type: integer
+                          use_in_router:
+                            description: If not set, only readiness probe will be created.
+                            type: boolean
+                        required:
+                        - path
+                        type: object
+                      hooks:
+                        description: Hooks allow to run commands during different stages of the application deployment.
+                        properties:
+                          build:
+                            description: Build defines commands that are run as part of the Dockerfile build
+                            items:
+                              type: string
+                            type: array
+                          restart:
+                            description: Restart describes commands to run during different stages of the application deployment.
+                            properties:
+                              after:
+                                description: Before contains commands that are executed after a unit is restarted. Commands listed in this hook run once per unit.
+                                items:
+                                  type: string
+                                type: array
+                              before:
+                                description: Before contains commands that are executed before a unit is restarted. Commands listed in this hook run once per unit.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                        type: object
+                      kubernetes:
+                        description: Kubernetes contains specific configurations for Kubernetes.
+                        properties:
+                          processes:
+                            additionalProperties:
+                              description: KetchYamlKubernetesConfig contains specific configurations of a process.
+                              properties:
+                                ports:
+                                  items:
+                                    description: KetchYamlKubernetesConfig contains configuration of an exposed port.
+                                    properties:
+                                      name:
+                                        description: Name is a descriptive name for the port. This field is optional.
+                                        type: string
+                                      port:
+                                        description: Port is the port that will be exposed on a Kubernetes service. If omitted, the target_port value is used.
+                                        type: integer
+                                      protocol:
+                                        description: Protocol defines the port protocol. The accepted values are TCP and UDP.
+                                        type: string
+                                      target_port:
+                                        description: TargetPort is the port that the process is listening on. If omitted, the port value is used.
+                                        type: integer
+                                    type: object
+                                  type: array
+                              type: object
+                            description: Processes configure which ports are exposed on each process of the application deployment.
+                            type: object
+                        type: object
+                    type: object
+                  labels:
+                    items:
+                      description: Label represents an environment variable present in an application.
+                      properties:
+                        name:
+                          description: Name of the label.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value of the label.
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  processes:
+                    items:
+                      description: ProcessSpec is a specification of the desired behavior of a process.
+                      properties:
+                        cmd:
+                          description: Commands executed on startup.
+                          items:
+                            type: string
+                          type: array
+                        env:
+                          description: Env is a list of environment variables to set in pods created for the process.
+                          items:
+                            description: Env represents an environment variable present in an application.
+                            properties:
+                              name:
+                                description: Name of the environment variable. Must be a C_IDENTIFIER.
+                                minLength: 1
+                                type: string
+                              value:
+                                description: Value of the environment variable.
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        name:
+                          description: Name of the process.
+                          minLength: 1
+                          type: string
+                        securityContext:
+                          description: Security options the process should run with.
+                          properties:
+                            allowPrivilegeEscalation:
+                              description: 'AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is: 1) run as Privileged 2) has CAP_SYS_ADMIN'
+                              type: boolean
+                            capabilities:
+                              description: The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.
+                              properties:
+                                add:
+                                  description: Added capabilities
+                                  items:
+                                    description: Capability represent POSIX capabilities type
+                                    type: string
+                                  type: array
+                                drop:
+                                  description: Removed capabilities
+                                  items:
+                                    description: Capability represent POSIX capabilities type
+                                    type: string
+                                  type: array
+                              type: object
+                            privileged:
+                              description: Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host. Defaults to false.
+                              type: boolean
+                            procMount:
+                              description: procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.
+                              type: string
+                            readOnlyRootFilesystem:
+                              description: Whether this container has a read-only root filesystem. Default is false.
+                              type: boolean
+                            runAsGroup:
+                              description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                              format: int64
+                              type: integer
+                            runAsNonRoot:
+                              description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                              type: boolean
+                            runAsUser:
+                              description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                              format: int64
+                              type: integer
+                            seLinuxOptions:
+                              description: The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                              properties:
+                                level:
+                                  description: Level is SELinux level label that applies to the container.
+                                  type: string
+                                role:
+                                  description: Role is a SELinux role label that applies to the container.
+                                  type: string
+                                type:
+                                  description: Type is a SELinux type label that applies to the container.
+                                  type: string
+                                user:
+                                  description: User is a SELinux user label that applies to the container.
+                                  type: string
+                              type: object
+                            windowsOptions:
+                              description: The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                              properties:
+                                gmsaCredentialSpec:
+                                  description: GMSACredentialSpec is where the GMSA admission webhook (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field.
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  description: GMSACredentialSpecName is the name of the GMSA credential spec to use.
+                                  type: string
+                                runAsUserName:
+                                  description: The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                                  type: string
+                              type: object
+                          type: object
+                        units:
+                          description: Units is a number of replicas of the process.
+                          type: integer
+                      required:
+                      - cmd
+                      - name
+                      type: object
+                    type: array
+                  routingSettings:
+                    description: RoutingSettings contains a weight of the current deployment used to route incoming traffic. If an application has two deployments with corresponding weights of 30 and 70, then 3 of 10 incoming requests will be sent to the first deployment (approximately).
+                    properties:
+                      weight:
+                        type: integer
+                    required:
+                    - weight
+                    type: object
+                  version:
+                    type: integer
+                required:
+                - image
+                - version
+                type: object
+              type: array
+            deploymentsCount:
+              description: DeploymentsCount is incremented every time a new deployment is added to Deployments and used as a version for new deployments.
+              type: integer
+            description:
+              maxLength: 140
+              type: string
+            dockerRegisty:
+              description: DockerRegistry contains docker registry configuration of the application.
+              properties:
+                secretName:
+                  description: SecretName is added to the "imagePullSecrets" list of each application pod.
+                  type: string
+              type: object
+            env:
+              description: List of environment variables of the application.
+              items:
+                description: Env represents an environment variable present in an application.
+                properties:
+                  name:
+                    description: Name of the environment variable. Must be a C_IDENTIFIER.
+                    minLength: 1
+                    type: string
+                  value:
+                    description: Value of the environment variable.
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
+            ingress:
+              description: Ingress contains configuration of entrypoints to access the application.
+              properties:
+                cnames:
+                  description: Cnames is a list of additional cnames.
+                  items:
+                    type: string
+                  type: array
+                generateDefaultCname:
+                  description: GenerateDefaultCname if set the application will have a default cname <app-name>.<ServiceEndpoint>.shipa.cloud.
+                  type: boolean
+              required:
+              - generateDefaultCname
+              type: object
+            platform:
+              description: Platform is the name of the platform that is used to build source code.
+              type: string
+            pool:
+              description: Pool is a name of a pool used to run the application.
+              minLength: 1
+              type: string
+            version:
+              type: string
+          required:
+          - deployments
+          - ingress
+          - pool
+          type: object
+        status:
+          description: AppStatus represents information about the status of an application.
+          properties:
+            conditions:
+              description: Conditions of App resource.
+              items:
+                description: AppCondition contains details for the current condition of this app.
+                properties:
+                  lastTransitionTime:
+                    description: LastTransitionTime is the timestamp corresponding to the last status.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about why the application is in this condition.
+                    type: string
+                  status:
+                    description: Status of the condition.
+                    type: string
+                  type:
+                    description: Type of the condition.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            pool:
+              description: 'ObjectReference contains enough information to let you inspect or modify the referred object. --- New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.  1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.  2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular     restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".     Those cannot be well described when embedded.  3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.  4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity     during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple     and the version of the actual struct is irrelevant.  5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type     will affect numerous schemas.  Don''t make new APIs embed an underspecified API type they do not control. Instead of using this type, create a locally provided and used type that is well-focused on your reference. For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .'
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: platforms.theketch.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.name
+    name: Name
+    type: string
+  - JSONPath: .spec.image
+    name: Image
+    type: string
+  - JSONPath: .spec.description
+    name: Description
+    type: string
+  group: theketch.io
+  names:
+    kind: Platform
+    listKind: PlatformList
+    plural: platforms
+    singular: platform
+  scope: Cluster
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: Platform an image that is used to build an app. See https://learn.shipa.io/docs/platforms-1
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: PlatformSpec contains the specification for the platform object
+          properties:
+            description:
+              description: Description human readable information about the platform.
+              maxLength: 140
+              type: string
+            image:
+              description: Image is the name of the image that implements the platform
+              type: string
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: ketch-system/ketch-serving-cert
+    controller-gen.kubebuilder.io/version: v0.2.5
+  name: pools.theketch.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    name: Status
+    type: string
+  - JSONPath: .status.namespace.name
+    name: Target Namespace
+    type: string
+  - JSONPath: .status.apps
+    name: apps
+    type: string
+  - JSONPath: .spec.appQuotaLimit
+    name: quota
+    type: string
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: ketch-webhook-service
+        namespace: ketch-system
+        path: /convert
+  group: theketch.io
+  names:
+    kind: Pool
+    listKind: PoolList
+    plural: pools
+    singular: pool
+  preserveUnknownFields: false
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Pool is the Schema for the pools API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: PoolSpec defines the desired state of Pool
+          properties:
+            appQuotaLimit:
+              type: integer
+            ingressController:
+              description: IngressControllerSpec contains configuration for an ingress controller.
+              properties:
+                className:
+                  type: string
+                clusterIssuer:
+                  type: string
+                serviceEndpoint:
+                  type: string
+                type:
+                  description: IngressControllerType is a type of an ingress controller for this pool.
+                  enum:
+                  - traefik
+                  - istio
+                  type: string
+              required:
+              - type
+              type: object
+            namespace:
+              minLength: 1
+              type: string
+          required:
+          - appQuotaLimit
+          - namespace
+          type: object
+        status:
+          description: PoolStatus defines the observed state of Pool
+          properties:
+            apps:
+              items:
+                type: string
+              type: array
+            message:
+              type: string
+            namespace:
+              description: 'ObjectReference contains enough information to let you inspect or modify the referred object. --- New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.  1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.  2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular     restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".     Those cannot be well described when embedded.  3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.  4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity     during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple     and the version of the actual struct is irrelevant.  5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type     will affect numerous schemas.  Don''t make new APIs embed an underspecified API type they do not control. Instead of using this type, create a locally provided and used type that is well-focused on your reference. For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .'
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            phase:
+              type: string
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ketch-leader-election-role
+  namespace: ketch-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: ketch-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - gateways
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - virtualservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - theketch.io
+  resources:
+  - apps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - theketch.io
+  resources:
+  - apps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - theketch.io
+  resources:
+  - pools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - theketch.io
+  resources:
+  - pools/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - traefik.containo.us
+  resources:
+  - ingressroutes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - traefik.containo.us
+  resources:
+  - ingressroutes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - traefik.containo.us
+  resources:
+  - traefikservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - traefik.containo.us
+  resources:
+  - traefikservices/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ketch-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: ketch-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ketch-leader-election-rolebinding
+  namespace: ketch-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ketch-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: ketch-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ketch-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ketch-manager-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: ketch-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ketch-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ketch-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: ketch-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ketch-controller-manager-metrics-service
+  namespace: ketch-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ketch-webhook-service
+  namespace: ketch-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ketch-controller-manager
+  namespace: ketch-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      - args:
+        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
+        command:
+        - /manager
+        image: shipasoftware/ketch:v0.2.1
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 300Mi
+          requests:
+            cpu: 300m
+            memory: 300Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      securityContext:
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: ketch-serving-cert
+  namespace: ketch-system
+spec:
+  dnsNames:
+  - ketch-webhook-service.ketch-system.svc
+  - ketch-webhook-service.ketch-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: ketch-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: ketch-selfsigned-issuer
+  namespace: ketch-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: ketch-system/ketch-serving-cert
+  name: ketch-mutating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: ketch-webhook-service
+      namespace: ketch-system
+      path: /mutate-theketch-io-v1beta1-pool
+  failurePolicy: Fail
+  name: mpool.kb.io
+  rules:
+  - apiGroups:
+    - theketch.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pools
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: ketch-system/ketch-serving-cert
+  name: ketch-validating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: ketch-webhook-service
+      namespace: ketch-system
+      path: /validate-theketch-io-v1beta1-pool
+  failurePolicy: Fail
+  name: vpool.kb.io
+  rules:
+  - apiGroups:
+    - theketch.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - pools
