@@ -5,6 +5,7 @@ kind: Pool
 metadata:
   name: production
 spec:
+  appQuotaLimit: -1
   ingressController:
     serviceEndpoint: 1.2.3.4
     type: istio
