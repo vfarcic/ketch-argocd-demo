@@ -10,7 +10,7 @@ metadata:
 spec:
   project: production
   source:
-    repoURL: https://github.com/devopsparadox/ketch-argocd-demo.git
+    repoURL: https://github.com/vfarcic/ketch-argocd-demo.git
     targetRevision: HEAD
     path: production
   destination:
@@ -33,7 +33,7 @@ metadata:
 spec:
   project: staging
   source:
-    repoURL: https://github.com/devopsparadox/ketch-argocd-demo.git
+    repoURL: https://github.com/vfarcic/ketch-argocd-demo.git
     targetRevision: HEAD
     path: staging
   destination:

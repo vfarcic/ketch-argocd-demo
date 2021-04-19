@@ -9,7 +9,7 @@ spec:
   project: staging
   source:
     path: devops-toolkit/staging
-    repoURL: https://github.com/devopsparadox/ketch-argocd-demo
+    repoURL: https://github.com/vfarcic/ketch-argocd-demo
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
