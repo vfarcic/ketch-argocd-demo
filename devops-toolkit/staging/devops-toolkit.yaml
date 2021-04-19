@@ -5,6 +5,15 @@ metadata:
 spec:
   deployments:
   - image: vfarcic/devops-toolkit-series:2.9.10
+    processes:
+    - cmd:
+      - docker-entrypoint.sh
+      - nginx
+      - -g
+      - daemon off;
+      name: web
+    routingSettings:
+      weight: 100
     version: 1
   ingress:
     generateDefaultCname: true
