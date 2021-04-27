@@ -5,9 +5,12 @@ metadata:
 spec:
   deployments:
   - image: vfarcic/devops-toolkit-series:2.9.10
+    exposedPorts:
+    - port: 80
+      protocol: TCP
     processes:
     - cmd:
-      - docker-entrypoint.sh
+      - /docker-entrypoint.sh
       - nginx
       - -g
       - daemon off;
