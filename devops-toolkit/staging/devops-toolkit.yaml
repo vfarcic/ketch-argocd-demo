@@ -17,4 +17,4 @@ spec:
     version: 1
   ingress:
     generateDefaultCname: true
-  pool: production
+  pool: staging
