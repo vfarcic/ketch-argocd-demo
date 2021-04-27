@@ -7,6 +7,6 @@ metadata:
 spec:
   appQuotaLimit: -1
   ingressController:
-    serviceEndpoint: 35.237.52.144
+    serviceEndpoint: 35.185.21.251
     type: istio
   namespace: ketch-production
