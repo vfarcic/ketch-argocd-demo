@@ -1,0 +1,23 @@
+apiVersion: theketch.io/v1beta1
+kind: App
+metadata:
+  name: devops-toolkit
+spec:
+  deployments:
+  - image: vfarcic/devops-toolkit-series:3.0.0
+    exposedPorts:
+    - port: 80
+      protocol: TCP
+    processes:
+    - cmd:
+      - /docker-entrypoint.sh
+      - nginx
+      - -g
+      - daemon off;
+      name: web
+    routingSettings:
+      weight: 100
+    version: 2
+  ingress:
+    generateDefaultCname: true
+  pool: production
