@@ -4,7 +4,7 @@ metadata:
   name: devops-toolkit-staging
 spec:
   deployments:
-  - image: vfarcic/devops-toolkit-series:2.9.10
+  - image: vfarcic/devops-toolkit-series:3.0.0
     exposedPorts:
     - port: 80
       protocol: TCP
@@ -17,7 +17,7 @@ spec:
       name: web
     routingSettings:
       weight: 100
-    version: 1
+    version: 2
   ingress:
     generateDefaultCname: true
   pool: staging
